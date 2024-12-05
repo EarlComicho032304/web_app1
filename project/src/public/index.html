@@ -3,50 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WEB-APP</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Soft & Clean Item Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f9fafb;
+            color: #444;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .container {
+            max-width: 1200px;
+        }
+
+        .item-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .item-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .item-card h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: #333;
+            transition: color 0.2s ease;
+        }
+
+        .item-card p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        header:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #pagination button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            background-color: #f9fafb;
+            border: none;
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        #pagination button:hover {
+            background-color: #f1f1f1;
+            transform: scale(1.05);
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        #itemForm label {
+            font-weight: 500;
+        }
+
+        #itemForm input,
+        #itemForm textarea {
+            border-radius: 6px;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            transition: border 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #itemForm input:focus,
+        #itemForm textarea:focus {
+            border-color: #ec1515;
+            box-shadow: 0 0 0 4px rgba(236, 21, 21, 0.2);
+            outline: none;
+        }
+
+        #itemForm button {
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            background-color: #ec1515;
+            color: #fff;
+            border: none;
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease;
+        }
+
+        #itemForm button:hover {
+            background-color: #164bdf;
+            transform: translateY(-2px);
+        }
+
+        /* Additional styles for the new styled box */
+        .bg-blue-100 {
+            background-color: #ebf8ff;
+        }
+
+        .text-blue-700 {
+            color: #3182ce;
+        }
+
+        .p-4 {
+            padding: 1rem;
+        }
+
+        .rounded-md {
+            border-radius: 8px;
+        }
+
+        .shadow-md {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        /* Smooth fade-in effect for modal */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>
-                Items 
-            </h1>
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search items...">
-                <button onclick="searchItems()">Search</button>
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Item Manager</h1>
+            <div class="flex gap-4">
+                <button class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline" onclick="openModal()">Add New Item</button>
+                <div class="search-container flex gap-4">
+                    <input type="text" id="searchInput" placeholder="Search items..." class="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-pink-500 w-full sm:w-auto">
+                    <button onclick="searchItems()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline">Search</button>
+                </div>
             </div>
-            <button onclick="openModal()" class="add-btn">Add New Item</button>
         </header>
 
         <main>
-            <div id="itemsList"></div>
-            <div id="pagination">
-                <button onclick="previousPage()">Previous</button>
-                <span id="pageInfo"></span>
-                <button onclick="nextPage()">Next</button>
+            <div id="itemsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                
+            </div>
+            <div id="pagination" class="flex justify-center mt-8">
+                <button onclick="previousPage()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline">Previous</button>
+                <span id="pageInfo" class="mx-4"></span>
+                <button onclick="nextPage()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline">Next</button>
             </div>
         </main>
 
-        <div id="modal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2 id="modalTitle">Add New Item</h2>
-                <form id="itemForm">
-                    <input type="hidden" id="itemId">
-                    <div>
-                        <label for="name">Name:</label>
-                        <input type="text" id="name" required>
+        <div id="modal" class="modal fixed inset-0 z-10 overflow-y-auto hidden fade-in">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+                    <div class="bg-gray-100 px-4 py-3 sm:px-6">
+                        <div class="flex justify-between items-center">
+                            <h2 id="modalTitle" class="text-lg font-medium text-gray-900">Add New Item</h2>
+                            <button type="button" class="hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50" onclick="closeModal()">
+                                <span class="sr-only">Close</span>
+                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label for="description">Description:</label>
-                        <textarea id="description"></textarea>
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <form id="itemForm" class="space-y-6" onsubmit="saveItem(event)">
+                            <input type="hidden" id="itemId">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                                <input type="text" id="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea id="description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-pink-500 focus:ring-pink-500 sm:text-sm"></textarea>
+                            </div>
+                            <div>
+                                
+                                
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline">Save</button>
+                            </div>
+                        </form>
                     </div>
-                    <button type="submit">Save</button>
-                </form>
+                </div>
             </div>
         </div>
-    </div>
     <script src="app.js"></script>
 </body>
 </html>

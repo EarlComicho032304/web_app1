@@ -1,146 +1,241 @@
-let currentPage = 1;
-const itemsPerPage = 50;
-let searchTerm = '';
+// Initialize items when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Page loaded, loading items...");
+    loadItems();  // Load items when page loads
+});
 
-// Fetch and display items
-async function fetchItems() {
-    try {
-        const response = await fetch(`/api/items?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`);
-        const items = await response.json();
-        displayItems(items);
-    } catch (error) {
-        console.error('Error fetching items:', error);
-    }
+// Open modal for adding a new item
+function openModal() {
+    console.log("Opening modal...");
+    document.getElementById("modal").classList.remove("hidden");
+    document.body.style.overflow = "hidden"; // Disable scroll when modal is open
 }
 
-function displayItems(items) {
-    const itemsList = document.getElementById('itemsList');
-    itemsList.innerHTML = '';
+// Close modal
+function closeModal() {
+    console.log("Closing modal...");
+    document.getElementById("modal").classList.add("hidden");
+    document.body.style.overflow = "auto"; // Enable scroll after modal is closed
+    document.getElementById("itemForm").reset(); // Reset the form fields
+}
 
+// Save new item to localStorage
+function saveItem(event) {
+    event.preventDefault(); // Prevent form default behavior
+
+    const itemName = document.getElementById("name").value;
+    const itemDescription = document.getElementById("description").value;
+
+    // Validate form data
+    if (!itemName || !itemDescription) {
+        alert("Please fill in both fields.");
+        return;
+    }
+
+    const newItem = {
+        name: itemName,
+        description: itemDescription,
+        id: new Date().getTime() // Unique ID using timestamp
+    };
+
+    // Get the current items from localStorage and add the new item
+    let items = JSON.parse(localStorage.getItem("items")) || [];
+    items.push(newItem);
+    localStorage.setItem("items", JSON.stringify(items));
+
+    console.log("New item saved:", newItem);
+
+    // Close modal and reset form
+    closeModal();
+    
+    // Reload item list
+    loadItems();
+}
+
+// Load items from localStorage and display them
+function loadItems() {
+    console.log("Loading items from localStorage...");
+    const itemsList = document.getElementById("itemsList");
+    itemsList.innerHTML = '';  // Clear existing items
+
+    // Retrieve items from localStorage
+    const items = JSON.parse(localStorage.getItem("items")) || [];
+    console.log("Items found in localStorage:", items);
+
+    if (items.length === 0) {
+        console.log("No items found.");
+    }
+
+    // Loop through items and create item cards
     items.forEach(item => {
-        const itemElement = document.createElement('div');
-        itemElement.className = 'item-card';
-        itemElement.innerHTML = `
-            <div>
-                <h3>${item.name}</h3>
-                <p>${item.description || ''}</p>
-                <small>Created: ${new Date(item.date_created).toLocaleString()}</small>
-            </div>
-            <div class="item-actions">
-                <button onclick="editItem(${item.id})" class="edit-btn">Edit</button>
-                <button onclick="deleteItem(${item.id})" class="delete-btn">Delete</button>
-            </div>
+        const itemCard = document.createElement("div");
+        itemCard.classList.add("item-card", "p-6", "border", "border-gray-300", "rounded-xl", "cursor-pointer", "hover:shadow-xl", "transition-shadow", "transform", "hover:scale-105");
+        itemCard.onclick = () => viewItem(item.id);
+
+        itemCard.innerHTML = `
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">${item.name}</h2>
+            <p class="text-gray-600 text-sm">${item.description}</p>
         `;
-        itemsList.appendChild(itemElement);
+        
+        itemsList.appendChild(itemCard);
     });
 }
 
-// Modal handling
-const modal = document.getElementById('modal');
-const closeBtn = document.getElementsByClassName('close')[0];
-const itemForm = document.getElementById('itemForm');
+// Display details of a clicked item
+function viewItem(itemId) {
+    console.log("Viewing item with ID:", itemId);
+    const items = JSON.parse(localStorage.getItem("items")) || [];
+    const item = items.find(i => i.id === itemId);
 
-function openModal(item = null) {
-    modal.style.display = 'block';
     if (item) {
-        document.getElementById('modalTitle').textContent = 'Edit Item';
-        document.getElementById('itemId').value = item.id;
-        document.getElementById('name').value = item.name;
-        document.getElementById('description').value = item.description || '';
+        alert(`Viewing item: ${item.name}\n\nDescription: ${item.description}`);
     } else {
-        document.getElementById('modalTitle').textContent = 'Add New Item';
-        itemForm.reset();
-        document.getElementById('itemId').value = '';
+        console.log("Item not found");
     }
 }
 
-closeBtn.onclick = () => modal.style.display = 'none';
-window.onclick = (event) => {
-    if (event.target === modal) {
-        modal.style.display = 'none';
-    }
-};
-
-// Form submission 
-itemForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const itemId = document.getElementById('itemId').value;
-    const itemData = {
-        name: document.getElementById('name').value,
-        description: document.getElementById('description').value
-    };
-
-    try {
-        const url = itemId ? `/api/items/${itemId}` : '/api/items';
-        const method = itemId ? 'PUT' : 'POST';
-        
-        const response = await fetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(itemData)
-        });
-
-        if (response.ok) {
-            modal.style.display = 'none';
-            fetchItems();
-        } else {
-            const error = await response.json();
-            alert(error.message);
-        }
-    } catch (error) {
-        console.error('Error saving item:', error);
-        alert('Error saving item');
-    }
-};
-
-// Edit item
-async function editItem(id) {
-    try {
-        const response = await fetch(`/api/items/${id}`);
-        const item = await response.json();
-        openModal(item);
-    } catch (error) {
-        console.error('Error fetching item:', error);
-    }
-}
-
-// Delete item
-async function deleteItem(id) {
-    if (confirm('Are you sure you want to delete this item?')) {
-        try {
-            const response = await fetch(`/api/items/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                fetchItems();
-            }
-        } catch (error) {
-            console.error('Error deleting item:', error);
-        }
-    }
-}
-
-// Search functionality
+// Handle search functionality
 function searchItems() {
-    searchTerm = document.getElementById('searchInput').value;
-    currentPage = 1;
-    fetchItems();
+    const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+    console.log("Searching for:", searchQuery);
+    
+    const items = JSON.parse(localStorage.getItem("items")) || [];
+    const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchQuery) || item.description.toLowerCase().includes(searchQuery));
+
+    console.log("Filtered items:", filteredItems);
+
+    // Reload item list with filtered items
+    const itemsList = document.getElementById("itemsList");
+    itemsList.innerHTML = '';
+
+    filteredItems.forEach(item => {
+        const itemCard = document.createElement("div");
+        itemCard.classList.add("item-card", "p-6", "border", "border-gray-300", "rounded-xl", "cursor-pointer", "hover:shadow-xl", "transition-shadow", "transform", "hover:scale-105");
+        itemCard.onclick = () => viewItem(item.id);
+
+        itemCard.innerHTML = `
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">${item.name}</h2>
+            <p class="text-gray-600 text-sm">${item.description}</p>
+        `;
+        
+        itemsList.appendChild(itemCard);
+    });
 }
 
-// Pagination
+// Pagination Functions (Optional)
+let currentPage = 1;
+const itemsPerPage = 6;
+
+function loadPaginatedItems() {
+    const items = JSON.parse(localStorage.getItem("items")) || [];
+    const totalItems = items.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    // Determine which items to display on the current page
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const itemsToDisplay = items.slice(startIndex, endIndex);
+
+    // Update item cards on the page
+    const itemsList = document.getElementById("itemsList");
+    itemsList.innerHTML = '';
+    itemsToDisplay.forEach(item => {
+        const itemCard = document.createElement("div");
+        itemCard.classList.add("item-card", "p-6", "border", "border-gray-300", "rounded-xl", "cursor-pointer", "hover:shadow-xl", "transition-shadow", "transform", "hover:scale-105");
+        itemCard.onclick = () => viewItem(item.id);
+
+        itemCard.innerHTML = `
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">${item.name}</h2>
+            <p class="text-gray-600 text-sm">${item.description}</p>
+        `;
+        
+        itemsList.appendChild(itemCard);
+    });
+
+    // Update pagination buttons
+    document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+}
+
+// Pagination button functions
 function previousPage() {
     if (currentPage > 1) {
         currentPage--;
-        fetchItems();
+        loadPaginatedItems();
     }
 }
 
 function nextPage() {
-    currentPage++;
-    fetchItems();
+    const items = JSON.parse(localStorage.getItem("items")) || [];
+    const totalItems = items.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadPaginatedItems();
+    }
 }
 
-// Initial load
-fetchItems();
+
+
+
+function loadItems() {
+    console.log("Loading items from localStorage...");
+    const itemsList = document.getElementById("itemsList");
+    itemsList.innerHTML = '';
+
+    
+    const items = JSON.parse(localStorage.getItem("items")) || [];
+    console.log("Items found in localStorage:", items);
+
+    if (items.length === 0) {
+        console.log("No items found.");
+    }
+
+    
+    items.forEach(item => {
+        const itemCard = document.createElement("div");
+        itemCard.classList.add("item-card", "p-4", "border", "border-gray-300", "rounded-md", "cursor-pointer", "hover:shadow-lg");
+        itemCard.onclick = () => viewItem(item.id);
+
+        
+        const deleteButton = document.createElement("button");
+        deleteButton.classList.add("delete-button");
+        deleteButton.textContent = "Delete";
+        deleteButton.onclick = () => deleteItem(item.id);
+
+        
+        itemCard.innerHTML = `
+            <div>
+                <h2 class="text-lg font-medium text-gray-800 mb-2">${item.name}</h2>
+                <p class="text-gray-600">${item.description}</p>
+            </div>
+        `;
+        itemCard.appendChild(deleteButton);
+
+        itemsList.appendChild(itemCard);
+    });
+}
+
+
+function deleteItem(itemId) {
+    console.log("Deleting item with ID:", itemId);
+
+   
+    let items = JSON.parse(localStorage.getItem("items")) || [];
+
+    
+    const itemIndex = items.findIndex(item => item.id === itemId);
+
+    if (itemIndex !== -1) {
+        items.splice(itemIndex, 1);
+
+        
+        localStorage.setItem("items", JSON.stringify(items));
+
+        
+        loadItems();
+    } else {
+        console.log("Item not found.");
+    }
+}
+
